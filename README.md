@@ -115,11 +115,12 @@ vercel --prod
 ```
 
 The static site and recorded demo fallback will load on Vercel. The live demo,
-API docs, health checks, and pilot form also call the FastAPI service at
-same-origin paths (`/v1/*`, `/docs`, `/health`, and `/openapi.json`). To make
-those features work on Vercel, deploy the API separately and configure Vercel
-rewrites for those paths, or configure the client to call the API host directly
-and allow the Vercel origin in `CONTEXTSMESH_CORS_ORIGINS`.
+Swagger UI docs (`/docs`) and the OpenAPI file (`/openapi.json`) are included as
+static assets. Regenerate the spec after API changes with
+`python -m scripts.export_openapi`. The live demo, health checks, and pilot
+submission still require the FastAPI service: deploy it separately and route
+`/v1/*` and `/health` to that service, or configure the client to call its URL
+directly and allow the Vercel origin in `CONTEXTSMESH_CORS_ORIGINS`.
 
 ## HTTP API
 

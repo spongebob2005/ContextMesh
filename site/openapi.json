@@ -1,0 +1,897 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ContextMesh API",
+    "description": "Context packs for agent fleets. Send a task to `POST /v1/plan` and get back the skills, tool schemas, MCP servers, and resolved entities that task needs \u2014 planned by a HydraDB graph traversal in two round-trips. Write usage back with `POST /v1/session`.\n\nReads are concurrent; session writes are serialized per process (HydraDB admits one writer per cell). Authentication is optional in this build: set `CONTEXTSMESH_API_KEY` to require `X-API-Key` or `Authorization: Bearer` on `/v1/*`, or terminate auth at your gateway.",
+    "version": "0.2.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Self-hosted service"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Liveness and graph reachability",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Readiness (503 when the graph is unreachable)",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stats": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Graph counts by label",
+        "operationId": "stats_v1_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HydraDB is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/plan": {
+      "post": {
+        "tags": [
+          "plan"
+        ],
+        "summary": "Plan context for a task",
+        "description": "Returns the skills matched for the task, only the tools those skills need, the MCP servers behind them, and mention-to-entity resolutions. Two graph round-trips for the demo graph.",
+        "operationId": "plan_v1_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HydraDB is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/session": {
+      "post": {
+        "tags": [
+          "session"
+        ],
+        "summary": "Record what the agent used",
+        "description": "Writes one Session vertex, increments usage counters for the tools actually called, and learns mention->entity aliases. Writes are serialized per process to match HydraDB's one-writer-per-cell model.",
+        "operationId": "session_v1_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HydraDB is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/pilot": {
+      "post": {
+        "tags": [
+          "pilot"
+        ],
+        "summary": "Request a pilot",
+        "description": "Stores a pilot request from the website as a JSON line.",
+        "operationId": "pilot_v1_pilot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PilotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PilotResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EntityOut": {
+        "properties": {
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id",
+            "description": "Graph vertex id of the entity."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Canonical name, e.g. checkout-api."
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind",
+            "description": "service, database, environment, ..."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "EntityOut"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Stable machine-readable error code."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable summary."
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "Request ID for support and logs."
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details",
+            "description": "Validation details, when applicable."
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "example": {
+          "error": {
+            "code": "graph_unavailable",
+            "message": "Graph backend unavailable.",
+            "request_id": "9f2c1a7b4e01"
+          }
+        }
+      },
+      "HealthResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "graph": {
+            "type": "string",
+            "title": "Graph"
+          },
+          "graph_reachable": {
+            "type": "boolean",
+            "title": "Graph Reachable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "graph",
+          "graph_reachable"
+        ],
+        "title": "HealthResponse"
+      },
+      "MCPServerOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "MCP server name, e.g. k8s."
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command",
+            "description": "Command that starts the server."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "MCPServerOut"
+      },
+      "PilotRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "description": "Work email."
+          },
+          "company": {
+            "type": "string",
+            "maxLength": 160,
+            "title": "Company",
+            "default": ""
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Note",
+            "description": "What are you building?",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email"
+        ],
+        "title": "PilotRequest",
+        "example": {
+          "company": "Analytical Engines",
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+          "note": "Two LangGraph agents, ~40 tasks/day."
+        }
+      },
+      "PilotResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "message"
+        ],
+        "title": "PilotResponse"
+      },
+      "PlanRequest": {
+        "properties": {
+          "task": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Task",
+            "description": "The task in human language.",
+            "examples": [
+              "why is checkout failing in prod"
+            ]
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "description": "Maximum number of matching skills to traverse.",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "task"
+        ],
+        "title": "PlanRequest",
+        "example": {
+          "task": "why is checkout failing in prod",
+          "top_k": 3
+        }
+      },
+      "PlanResponse": {
+        "properties": {
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills",
+            "description": "Matched skill names."
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolOut"
+            },
+            "type": "array",
+            "title": "Tools",
+            "description": "Only the tools this task needs."
+          },
+          "mcp_servers": {
+            "items": {
+              "$ref": "#/components/schemas/MCPServerOut"
+            },
+            "type": "array",
+            "title": "Mcp Servers",
+            "description": "Servers behind those tools."
+          },
+          "resolved_entities": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EntityOut"
+            },
+            "type": "object",
+            "title": "Resolved Entities",
+            "description": "Mention -> canonical entity."
+          },
+          "graph_round_trips": {
+            "type": "integer",
+            "title": "Graph Round Trips",
+            "description": "Graph queries used to build the pack."
+          },
+          "context_ms": {
+            "type": "number",
+            "title": "Context Ms",
+            "description": "Time spent in the graph, in milliseconds."
+          }
+        },
+        "type": "object",
+        "required": [
+          "skills",
+          "tools",
+          "mcp_servers",
+          "resolved_entities",
+          "graph_round_trips",
+          "context_ms"
+        ],
+        "title": "PlanResponse",
+        "example": {
+          "context_ms": 7.0,
+          "graph_round_trips": 2,
+          "mcp_servers": [
+            {
+              "command": "npx -y mcp-server-kubernetes",
+              "id": 303,
+              "name": "k8s"
+            }
+          ],
+          "resolved_entities": {
+            "checkout": {
+              "entity_id": 402,
+              "kind": "service",
+              "name": "checkout-api"
+            },
+            "prod": {
+              "entity_id": 406,
+              "kind": "environment",
+              "name": "prod-us"
+            }
+          },
+          "skills": [
+            "incident-triage"
+          ],
+          "tools": [
+            {
+              "id": 205,
+              "kind": "mcp_tool",
+              "schema_json": "{\"name\":\"get_events\",...}",
+              "server": "k8s",
+              "server_id": 303,
+              "tool": "get_events"
+            }
+          ]
+        }
+      },
+      "SessionRequest": {
+        "properties": {
+          "task": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Task"
+          },
+          "used_tools": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Used Tools",
+            "description": "Tool names the agent actually called."
+          },
+          "resolutions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Resolutions",
+            "description": "Mention -> canonical entity name the agent used."
+          }
+        },
+        "type": "object",
+        "required": [
+          "task"
+        ],
+        "title": "SessionRequest",
+        "example": {
+          "resolutions": {
+            "checkout": "checkout-api",
+            "prod": "prod-us"
+          },
+          "task": "why is checkout failing in prod",
+          "used_tools": [
+            "get_pod_status",
+            "get_events"
+          ]
+        }
+      },
+      "SessionResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "Id of the recorded Session vertex."
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id"
+        ],
+        "title": "SessionResponse"
+      },
+      "StatsResponse": {
+        "properties": {
+          "Skill": {
+            "type": "integer",
+            "title": "Skill"
+          },
+          "Tool": {
+            "type": "integer",
+            "title": "Tool"
+          },
+          "MCPServer": {
+            "type": "integer",
+            "title": "Mcpserver"
+          },
+          "Entity": {
+            "type": "integer",
+            "title": "Entity"
+          },
+          "Alias": {
+            "type": "integer",
+            "title": "Alias"
+          },
+          "Session": {
+            "type": "integer",
+            "title": "Session"
+          }
+        },
+        "type": "object",
+        "required": [
+          "Skill",
+          "Tool",
+          "MCPServer",
+          "Entity",
+          "Alias",
+          "Session"
+        ],
+        "title": "StatsResponse"
+      },
+      "ToolOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool",
+            "description": "Tool name to bind in the agent runtime."
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "schema_json": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Json",
+            "description": "JSON schema for the tool."
+          },
+          "server": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server",
+            "description": "MCP server that serves the tool."
+          },
+          "server_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool"
+        ],
+        "title": "ToolOut"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "plan",
+      "description": "Plan the context for a task."
+    },
+    {
+      "name": "session",
+      "description": "Record what an agent used."
+    },
+    {
+      "name": "ops",
+      "description": "Health, readiness, and graph stats."
+    },
+    {
+      "name": "pilot",
+      "description": "Pilot requests from the website."
+    }
+  ]
+}

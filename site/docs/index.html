@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0f14">
+  <title>ContextMesh API Docs</title>
+  <link rel="icon" href="/assets/contextmesh_mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: #0b0f14;
+      color: #dbe7f4;
+    }
+    body { margin: 0; }
+    .docs-header {
+      padding: 20px max(24px, calc((100vw - 1200px) / 2));
+      border-bottom: 1px solid #1e2a39;
+      background: #0b0f14;
+    }
+    .docs-header a { color: #37d2aa; text-decoration: none; }
+    .docs-header p { margin: 8px 0 0; color: #9aacc0; }
+    .swagger-ui { max-width: 1240px; margin: 0 auto; padding: 0 20px 48px; }
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .scheme-container { background: #101721; box-shadow: none; }
+    .swagger-ui .info .title, .swagger-ui .opblock-tag,
+    .swagger-ui .model-title, .swagger-ui label,
+    .swagger-ui .parameter__name, .swagger-ui .response-col_status {
+      color: #dbe7f4;
+    }
+    .swagger-ui .info p, .swagger-ui .renderedMarkdown p,
+    .swagger-ui .response-col_description { color: #b6c4d3; }
+    .swagger-ui .opblock .opblock-summary-description,
+    .swagger-ui .opblock .opblock-section-header h4 { color: #dbe7f4; }
+    .swagger-ui section.models { border-color: #314154; }
+    .swagger-ui .model-box { background: #101721; }
+  </style>
+</head>
+<body>
+  <header class="docs-header">
+    <a href="/">← ContextMesh home</a>
+    <p>Interactive API reference. The static website does not host the API;
+      deploy the FastAPI service separately to execute requests.</p>
+    <p><a href="/openapi.json">Download the OpenAPI specification</a></p>
+  </header>
+  <main id="swagger-ui"></main>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    window.ui = SwaggerUIBundle({
+      url: "/openapi.json",
+      dom_id: "#swagger-ui",
+      deepLinking: true,
+      displayRequestDuration: true,
+      filter: true,
+      supportedSubmitMethods: [],
+      presets: [SwaggerUIBundle.presets.apis],
+      layout: "BaseLayout"
+    });
+  </script>
+</body>
+</html>
