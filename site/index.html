@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContextMesh API — context packs for agent fleets</title>
+<meta name="description" content="ContextMesh is a self-hosted web API that gives agents the exact skills, tools, and resolved entities a task needs. One /v1/plan call, two graph round-trips, 46% fewer prompt tokens. Built on HydraDB.">
+<meta property="og:title" content="ContextMesh API — agent context, one call away">
+<meta property="og:description" content="POST a task, get the right skills, tool schemas, and resolved entities. Plain HTTP, any agent runtime.">
+<meta property="og:image" content="assets/x_post_1600x900.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="assets/contextmesh_mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="ContextMesh API home">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="15" fill="#0d1420"/>
+        <g stroke="#3a4f6b" stroke-width="2.4">
+          <line x1="12" y1="15" x2="32" y2="36"/><line x1="52" y1="13" x2="32" y2="36"/>
+          <line x1="32" y1="9" x2="32" y2="36"/><line x1="10" y1="49" x2="32" y2="36"/>
+          <line x1="54" y1="47" x2="32" y2="36"/>
+        </g>
+        <g fill="#5aa2ff">
+          <circle cx="12" cy="15" r="4.6"/><circle cx="52" cy="13" r="4.6"/>
+          <circle cx="10" cy="49" r="4.6"/><circle cx="54" cy="47" r="4.6"/>
+        </g>
+        <circle cx="32" cy="36" r="7.4" fill="#37d2aa"/>
+      </svg>
+      <span class="wordmark">Context<span>Mesh</span></span>
+      <span class="wordmark-api">API</span>
+    </a>
+
+    <nav class="nav-links" id="navLinks" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#api">API</a>
+      <a href="/docs" target="_blank" rel="noopener">Docs</a>
+      <a href="#demo">Try it</a>
+      <a href="#proof">Proof</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a class="btn btn-primary btn-sm" href="#api">Read the API</a>
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks" aria-label="Toggle menu">
+        <span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- hero -->
+  <section class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Self-hosted web API · built on HydraDB</p>
+        <h1>One API call. The right context for every agent task.</h1>
+        <p class="lede">ContextMesh is a web API that plans context from a graph. Send a task to <code class="inline-code">/v1/plan</code> and get back only the skills, tool schemas, MCP servers, and resolved entities that task needs.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#api">Read the API</a>
+          <a class="btn btn-ghost" href="#demo">Try it live</a>
+        </div>
+        <ul class="hero-bullets">
+          <li>Plain HTTP/JSON — works with any agent runtime</li>
+          <li>2 graph round-trips per plan, ~4–40 ms reads</li>
+          <li>Self-host behind your gateway; interactive docs at <a class="inline-link" href="/docs" target="_blank" rel="noopener">/docs</a></li>
+        </ul>
+      </div>
+
+      <div class="hero-visual">
+        <canvas id="graphCanvas" role="img" aria-label="Animated graph: an agent task resolves through skills to tools, MCP servers, and entities in two round-trips."></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- stats band -->
+  <section class="band" aria-label="Key numbers">
+    <div class="wrap band-grid">
+      <div class="band-item" data-reveal>
+        <span class="band-num">2</span>
+        <span class="band-label">graph round-trips per <span class="mono-sm">/v1/plan</span></span>
+      </div>
+      <div class="band-item" data-reveal>
+        <span class="band-num" data-count="46" data-suffix="%">46%</span>
+        <span class="band-label">fewer prompt tokens vs. loading all tools</span>
+      </div>
+      <div class="band-item" data-reveal>
+        <span class="band-num">4<span class="band-split">/5</span></span>
+        <span class="band-label">correct with the API pack, vs. 0/5 baseline</span>
+      </div>
+      <div class="band-item" data-reveal>
+        <span class="band-num">0</span>
+        <span class="band-label">errors at 128 concurrent sessions</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- problem -->
+  <section class="section section-problem">
+    <div class="wrap">
+      <h2 class="h2">Every agent step pays for tools it never uses.</h2>
+      <p class="section-lede">Stuffing every schema into the prompt is slow, expensive, and brittle. ContextMesh gives your agent a small, exact context pack per task through a single API call.</p>
+
+      <div class="problem-list">
+        <article class="problem-row" data-reveal>
+          <span class="problem-num">16<span class="arrow">→</span>5</span>
+          <div class="problem-body">
+            <h3>Tool tax</h3>
+            <p>The model re-reads schemas it will not call. <span class="mono-sm">/v1/plan</span> returns only the tools that match the task.</p>
+          </div>
+        </article>
+        <article class="problem-row" data-reveal>
+          <span class="problem-num">N<span class="arrow">→</span>2</span>
+          <div class="problem-body">
+            <h3>Resolver tax</h3>
+            <p>Mentions like “checkout” or “prod” are resolved to canonical entities in the same plan response—no extra lookup calls.</p>
+          </div>
+        </article>
+        <article class="problem-row" data-reveal>
+          <span class="problem-num">1 <span class="problem-unit">reboot</span></span>
+          <div class="problem-body">
+            <h3>Memory tax</h3>
+            <p>Usage and learned aliases are written back via <span class="mono-sm">/v1/session</span> to a graph that survives restarts.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- how it works -->
+  <section class="section section-how" id="how">
+    <div class="wrap how-grid">
+      <figure class="figure" data-reveal>
+        <img src="assets/graph.png" alt="The HydraDB graph: agent, skills, tools, MCP servers, and entities connected by edges." loading="lazy" width="1280" height="720">
+        <figcaption>6 skills, 15 tools, 5 MCP servers, 9 entities in the seeded graph. Queried by the API on every plan.</figcaption>
+      </figure>
+
+      <div class="how-copy">
+        <h2 class="h2">Call the API before the model sees anything.</h2>
+        <p class="section-lede">Your agent posts a task, gets a context pack, binds only those tools, then reports what it used. The graph answers in two round-trips.</p>
+
+        <ol class="steps">
+          <li data-reveal>
+            <span class="step-idx">01</span>
+            <div>
+              <h3><code class="inline-code">POST /v1/plan</code> with a task</h3>
+              <p class="mono-sm">{"task": "why is checkout failing in prod"}</p>
+            </div>
+          </li>
+          <li data-reveal>
+            <span class="step-idx">02</span>
+            <div>
+              <h3>API traverses skills → tools → servers</h3>
+              <p class="mono-sm">incident-triage → 5 tools → github, k8s, grafana, pagerduty</p>
+            </div>
+          </li>
+          <li data-reveal>
+            <span class="step-idx">03</span>
+            <div>
+              <h3>API resolves mentions to entities</h3>
+              <p class="mono-sm">checkout → checkout-api · prod → prod-us</p>
+            </div>
+          </li>
+          <li data-reveal>
+            <span class="step-idx">04</span>
+            <div>
+              <h3><code class="inline-code">POST /v1/session</code> to write back</h3>
+              <p class="mono-sm">usage counters and learned aliases improve the next plan</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- api -->
+  <section class="section section-api" id="api">
+    <div class="wrap">
+      <div class="api-head">
+        <div>
+          <p class="eyebrow">API reference · v0.2.0</p>
+          <h2 class="h2">Plain HTTP. JSON in, context pack out.</h2>
+        </div>
+        <div class="api-head-side">
+          <p class="section-lede">Run the ContextMesh service next to your HydraDB node and call it from any agent framework or language. Reads (<span class="mono-sm">/v1/plan</span>) are concurrent; writes (<span class="mono-sm">/v1/session</span>) are serialized per process to match single-writer storage.</p>
+          <div class="api-doc-links">
+            <a class="doc-link" href="/docs" target="_blank" rel="noopener"><span class="method method-get">Docs</span><span>Interactive API docs (Swagger UI)</span><span class="doc-path">/docs</span></a>
+            <a class="doc-link" href="/openapi.json" target="_blank" rel="noopener"><span class="method method-get">Spec</span><span>OpenAPI schema (JSON)</span><span class="doc-path">/openapi.json</span></a>
+          </div>
+          <div class="api-meta">
+            <span><span class="method method-get">Base</span> <span class="mono-sm">http://localhost:8000</span> — self-hosted default; replace with your service URL.</span>
+            <span><span class="method method-post">Auth</span> optional API key — <span class="mono-sm">X-API-Key</span> or <span class="mono-sm">Bearer</span>; off by default, enable with <span class="mono-sm">CONTEXTSMESH_API_KEY</span>.</span>
+            <span><span class="method method-get">CORS</span> for a separate frontend origin, allow it with <span class="mono-sm">CONTEXTSMESH_CORS_ORIGINS</span>.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="api-grid" data-reveal>
+        <div class="endpoint-list">
+          <article class="endpoint">
+            <div class="endpoint-top">
+              <span class="method method-post">POST</span>
+              <code>/v1/plan</code>
+            </div>
+            <p>Plan context for a task. Returns matched skills, tool schemas, MCP servers, resolved entities, and timing.</p>
+          </article>
+          <article class="endpoint">
+            <div class="endpoint-top">
+              <span class="method method-post">POST</span>
+              <code>/v1/session</code>
+            </div>
+            <p>Record what was used. Updates usage counters and learns new aliases. Returns a <span class="mono-sm">session_id</span>.</p>
+          </article>
+          <article class="endpoint">
+            <div class="endpoint-top">
+              <span class="method method-get">GET</span>
+              <code>/v1/stats</code>
+            </div>
+            <p>Graph counts by label (skills, tools, servers, entities, aliases, sessions).</p>
+          </article>
+          <article class="endpoint">
+            <div class="endpoint-top">
+              <span class="method method-get">GET</span>
+              <code>/health</code>
+            </div>
+            <p>Liveness plus graph reachability. <span class="mono-sm">/ready</span> returns 503 when the graph is unreachable.</p>
+          </article>
+        </div>
+
+        <div class="code-col">
+          <div class="code-card">
+            <div class="code-title">Request <span class="mono-sm">POST /v1/plan</span></div>
+<pre><code>curl -s http://localhost:8000/v1/plan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "why is checkout failing in prod"
+  }'</code></pre>
+          </div>
+          <div class="code-card">
+            <div class="code-title">Response</div>
+<pre><code>{
+  "skills": ["incident-triage"],
+  "tools": [
+    { "tool": "get_pod_status", "server": "k8s",
+      "schema_json": "{...}" },
+    { "tool": "get_events", "server": "k8s", ... },
+    { "tool": "get_metric_series", "server": "grafana", ... }
+  ],
+  "mcp_servers": [
+    { "name": "k8s", "command": "..." },
+    { "name": "grafana", ... }
+  ],
+  "resolved_entities": {
+    "checkout": { "name": "checkout-api", "kind": "service" },
+    "prod":     { "name": "prod-us", "kind": "environment" }
+  },
+  "graph_round_trips": 2,
+  "context_ms": 7.0
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="api-grid api-grid-bottom" data-reveal>
+        <div class="tabs" data-tabs>
+          <div class="tab-bar" role="tablist" aria-label="Integration examples">
+            <button class="tab active" data-tab="js" role="tab" aria-selected="true">JavaScript</button>
+            <button class="tab" data-tab="py" role="tab" aria-selected="false">Python</button>
+          </div>
+
+          <div class="tab-panel active" data-panel="js" role="tabpanel">
+<pre><code>const base = "http://localhost:8000";
+// Replace base with your self-hosted service URL.
+// If API auth is enabled, set this header from a secure runtime config:
+const headers = { "Content-Type": "application/json" };
+// headers["X-API-Key"] = apiKey;
+const task = "why is checkout failing in prod";
+
+async function post(path, body) {
+  const response = await fetch(`${base}${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message || `HTTP ${response.status}`);
+  }
+  return data;
+}
+
+// 1. Plan: only the context this task needs.
+const pack = await post("/v1/plan", { task });
+
+// 2. Bind pack.tools, run your model, then record what was used.
+await post("/v1/session", {
+    task,
+    used_tools: ["get_pod_status", "get_events"],
+    resolutions: Object.fromEntries(
+      Object.entries(pack.resolved_entities)
+        .map(([mention, ent]) =&gt; [mention, ent.name])
+    ),
+});</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="py" role="tabpanel">
+<pre><code>import requests
+
+base = "http://localhost:8000"
+# Replace base with your self-hosted service URL.
+# If API auth is enabled, set this from a secure runtime config:
+headers = {}  # leave empty when auth is disabled
+# headers["X-API-Key"] = api_key  # set from secure runtime config if enabled
+task = "why is checkout failing in prod"
+
+def post(path, body):
+    response = requests.post(
+        f"{base}{path}", json=body, headers=headers, timeout=10
+    )
+    data = response.json()
+    if not response.ok:
+        raise RuntimeError(data.get("error", {}).get("message", response.text))
+    return data
+
+# 1. Plan: only the context this task needs.
+pack = post("/v1/plan", {"task": task})
+
+# 2. Bind pack["tools"], run your model, then record what was used.
+post("/v1/session", {
+    "task": task,
+    "used_tools": ["get_pod_status", "get_events"],
+    "resolutions": {
+        mention: ent["name"]
+        for mention, ent in pack["resolved_entities"].items()
+    },
+})</code></pre>
+          </div>
+        </div>
+
+        <div class="quickstart">
+          <h3 class="result-title">Quickstart (self-host)</h3>
+          <ol class="qs-steps">
+            <li><span>1</span><div><strong>Start HydraDB</strong><p class="mono-sm">scripts/run_node.sh &nbsp;# :7687 :8443 :9090</p></div></li>
+            <li><span>2</span><div><strong>Install &amp; seed the graph</strong><p class="mono-sm">pip install -r requirements.txt<br>python -m hydracontext.seed</p></div></li>
+            <li><span>3</span><div><strong>Run the API</strong><p class="mono-sm">uvicorn hydracontext.service:app --port 8000</p></div></li>
+            <li><span>4</span><div><strong>Call it from your agent</strong><p class="mono-sm">POST /v1/plan → bind tools → run → POST /v1/session</p></div></li>
+          </ol>
+          <p class="panel-note"><strong>Auth:</strong> off by default. Set <span class="mono-sm">CONTEXTSMESH_API_KEY</span> to require <span class="mono-sm">X-API-Key</span> or <span class="mono-sm">Authorization: Bearer</span>, or terminate auth at your gateway. <strong>Writes</strong> are serialized per process; <strong>reads</strong> are concurrent. A Python store (<span class="mono-sm">HydraContextStore</span>) is also available for in-process use.</p>
+        </div>
+      </div>
+
+      <div class="api-grid api-grid-bottom" data-reveal>
+        <div class="code-card">
+          <div class="code-title">Structured errors</div>
+<pre><code>// 401 when an API key is enabled and missing
+{ "error": { "code": "http_error",
+             "message": "Missing or invalid API key.",
+             "request_id": "9f2c1a7b4e01" } }
+
+// 422 invalid request
+{ "error": { "code": "invalid_request",
+             "message": "Request validation failed.",
+             "request_id": "9f2c1a7b4e01",
+             "details": [ ... ] } }
+
+// 503 when HydraDB cannot serve a plan or write
+{ "error": { "code": "graph_unavailable",
+             "message": "Graph backend unavailable.",
+             "request_id": "9f2c1a7b4e01" } }
+
+// GET /ready when the graph is unreachable
+{ "ok": false, "graph": "agent", "graph_reachable": false }</code></pre>
+        </div>
+
+        <div class="quickstart">
+          <h3 class="result-title">Behavior &amp; limits</h3>
+          <div class="meta-list">
+            <div><span>Reads</span><p>Concurrent. <span class="mono-sm">/v1/plan</span> is safe to fan out across agents.</p></div>
+            <div><span>Writes</span><p>Serialized per process to match HydraDB's single-writer-per-cell model.</p></div>
+            <div><span>Plan shape</span><p><span class="mono-sm">top_k</span> defaults to 3, capped at 10; 2 graph round-trips on the demo graph.</p></div>
+            <div><span>Auth</span><p>Optional key on <span class="mono-sm">/v1/plan</span>, <span class="mono-sm">/v1/session</span>, <span class="mono-sm">/v1/stats</span>; <span class="mono-sm">/health</span> and <span class="mono-sm">/ready</span> stay open.</p></div>
+            <div><span>CORS</span><p>Browser clients allowed by default; lock down origins with <span class="mono-sm">CONTEXTSMESH_CORS_ORIGINS</span>.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- live demo -->
+  <section class="section section-demo" id="demo">
+    <div class="wrap">
+      <div class="demo-head">
+        <div>
+          <p class="eyebrow">Try the API</p>
+          <h2 class="h2">Send a task, inspect the context pack.</h2>
+        </div>
+        <p class="section-lede demo-note">This calls <span class="mono-sm">POST /v1/plan</span> on the live service and renders the JSON response below. Works with recorded packs if the API is offline.</p>
+      </div>
+
+      <div class="demo-shell" data-reveal>
+        <div class="demo-controls">
+          <label class="field-label" for="taskInput">Task (request body)</label>
+          <div class="input-row">
+            <input id="taskInput" type="text" value="why is checkout failing in prod" autocomplete="off" spellcheck="false">
+            <button class="btn btn-primary" id="planBtn">Call /v1/plan</button>
+          </div>
+
+          <div class="chips" id="exampleChips" aria-label="Example tasks">
+            <button class="chip" data-task="why is checkout failing in prod">checkout failing in prod</button>
+            <button class="chip" data-task="is orders lagging? check replication">orders lagging</button>
+            <button class="chip" data-task="scale search in staging">scale search in staging</button>
+            <button class="chip" data-task="page the oncall for payments">page the oncall</button>
+          </div>
+
+          <div class="demo-status" id="demoStatus" role="status" aria-live="polite">Connecting to the API…</div>
+
+          <div class="demo-metrics">
+            <div class="metric">
+              <span class="metric-num" id="mTrips">—</span>
+              <span class="metric-label">round-trips</span>
+            </div>
+            <div class="metric">
+              <span class="metric-num" id="mMs">—</span>
+              <span class="metric-label">ms context</span>
+            </div>
+            <div class="metric">
+              <span class="metric-num" id="mTools">—</span>
+              <span class="metric-label">tools returned</span>
+            </div>
+            <div class="metric">
+              <span class="metric-num" id="mServers">—</span>
+              <span class="metric-label">MCP servers</span>
+            </div>
+          </div>
+
+          <div class="demo-actions">
+            <button class="btn btn-ghost btn-sm" id="recordBtn" disabled>POST /v1/session</button>
+            <span class="demo-graph-stats mono-sm" id="graphStats"></span>
+          </div>
+        </div>
+
+        <div class="demo-results">
+          <div class="result-block">
+            <h3 class="result-title">skills[]</h3>
+            <div class="pill-row" id="rSkills"><span class="pill pill-muted">waiting</span></div>
+          </div>
+
+          <div class="result-block">
+            <h3 class="result-title">tools[] <span class="count" id="toolCount"></span></h3>
+            <ul class="tool-list" id="rTools"></ul>
+          </div>
+
+          <div class="result-block">
+            <h3 class="result-title">resolved_entities{}</h3>
+            <ul class="entity-list" id="rEntities"></ul>
+          </div>
+
+          <details class="raw">
+            <summary>Raw JSON response</summary>
+            <pre id="rawJson"></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- proof -->
+  <section class="section section-proof" id="proof">
+    <div class="wrap">
+      <h2 class="h2">Same model. Same tasks. Smaller context.</h2>
+      <p class="section-lede">Five ops tasks, one local 1.5B model: every tool in the prompt versus the context pack returned by the API.</p>
+
+      <div class="proof-grid">
+        <div class="panel token-panel" data-reveal>
+          <h3 class="result-title">Prompt tokens, lower is better</h3>
+          <div class="bar-row">
+            <span class="bar-name">baseline</span>
+            <div class="bar-track"><span class="bar bar-bad" data-bar="100"></span></div>
+            <span class="bar-val">15,276</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-name">via API</span>
+            <div class="bar-track"><span class="bar bar-good" data-bar="53.6"></span></div>
+            <span class="bar-val">8,195</span>
+          </div>
+          <p class="panel-note">46% fewer tokens with the same model and the same expected answers.</p>
+        </div>
+
+        <div class="panel correct-panel" data-reveal>
+          <h3 class="result-title">Tool and entity correctness</h3>
+          <div class="correct-row">
+            <span class="correct-num">4<span class="band-split">/5</span></span>
+            <span class="correct-label">ContextMesh API</span>
+          </div>
+          <div class="correct-row correct-row-dim">
+            <span class="correct-num">0<span class="band-split">/5</span></span>
+            <span class="correct-label">all tools in prompt</span>
+          </div>
+          <p class="panel-note">The planned pack binds the right tools and resolves the right services. The baseline does not.</p>
+        </div>
+      </div>
+
+      <div class="metrics-strip" data-reveal>
+        <div class="strip-item"><span class="strip-num">7.8 ms</span><span class="strip-label">/v1/plan p50 at 16-way concurrency</span></div>
+        <div class="strip-item"><span class="strip-num">23.5 ms</span><span class="strip-label">/v1/plan p95 at 16-way concurrency</span></div>
+        <div class="strip-item"><span class="strip-num">128</span><span class="strip-label">concurrent sessions, 0 errors</span></div>
+        <div class="strip-item"><span class="strip-num">0</span><span class="strip-label">context lost across a reboot</span></div>
+      </div>
+
+      <p class="footnote">Measured against a live HydraDB node. Reads scale concurrently; session writes are serialized per process (single-writer-per-cell). Graph storage survives restarts because object storage is the source of truth.</p>
+    </div>
+  </section>
+
+  <!-- pricing -->
+  <section class="section section-pricing" id="pricing">
+    <div class="wrap">
+      <h2 class="h2">Pricing that follows the agents.</h2>
+      <p class="section-lede">Proposed pilot pricing for the hosted or managed API. Self-host the open stack on your own infra anytime.</p>
+
+      <div class="price-grid">
+        <article class="price" data-reveal>
+          <h3>Free</h3>
+          <p class="price-amount">$0</p>
+          <p class="price-for">For a first agent</p>
+          <ul>
+            <li>1,000 plan resolutions / month</li>
+            <li>Up to 2 agents</li>
+            <li>Self-host or sandbox</li>
+            <li>Community support</li>
+          </ul>
+          <a class="btn btn-ghost btn-block" href="#api">Read the API</a>
+        </article>
+
+        <article class="price price-featured" data-reveal>
+          <span class="price-tag">Most fleets start here</span>
+          <h3>Team</h3>
+          <p class="price-amount">$0.40 <span>/ 1k</span></p>
+          <p class="price-for">Per 1,000 resolutions</p>
+          <ul>
+            <li>Unlimited agents</li>
+            <li>Learned aliases &amp; usage ranking</li>
+            <li>Shared context graph</li>
+            <li>99.9% uptime target</li>
+          </ul>
+          <button class="btn btn-primary btn-block js-pilot" type="button">Start a pilot</button>
+        </article>
+
+        <article class="price" data-reveal>
+          <h3>Enterprise</h3>
+          <p class="price-amount">Custom</p>
+          <p class="price-for">Self-hosted, your cloud</p>
+          <ul>
+            <li>Your VPC / object storage</li>
+            <li>Gateway/token auth, TLS &amp; audit logs</li>
+            <li>Multi-tenant namespaces</li>
+            <li>SLA and support</li>
+          </ul>
+          <button class="btn btn-ghost btn-block js-pilot" type="button">Talk to us</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- faq -->
+  <section class="section section-faq" id="faq">
+    <div class="wrap faq-wrap">
+      <h2 class="h2">API questions, answered.</h2>
+
+      <details class="faq-item" data-reveal>
+        <summary>What exactly does the API return?</summary>
+        <p><span class="mono-sm">POST /v1/plan</span> returns a context pack: <span class="mono-sm">skills</span>, <span class="mono-sm">tools</span> (with schemas and server), <span class="mono-sm">mcp_servers</span>, <span class="mono-sm">resolved_entities</span> (mention → canonical name/kind), plus <span class="mono-sm">graph_round_trips</span> and <span class="mono-sm">context_ms</span>. Your agent binds only those tools.</p>
+      </details>
+      <details class="faq-item" data-reveal>
+        <summary>Does it work with my agent framework?</summary>
+        <p>Yes. It’s plain HTTP/JSON. Call <span class="mono-sm">/v1/plan</span> before your model step and <span class="mono-sm">/v1/session</span> after—LangGraph, custom loops, or any runtime in any language.</p>
+      </details>
+      <details class="faq-item" data-reveal>
+        <summary>Is there an SDK?</summary>
+        <p>The primary interface is the web API. For Python you can also use <span class="mono-sm">HydraContextStore</span> in-process (same plan/record logic) if you prefer embedding over HTTP.</p>
+      </details>
+      <details class="faq-item" data-reveal>
+        <summary>How does write-back work?</summary>
+        <p><span class="mono-sm">POST /v1/session</span> takes the task, <span class="mono-sm">used_tools</span>, and <span class="mono-sm">resolutions</span>. It increments usage counters and learns new aliases. A conflict guard keeps one canonical entity per mention.</p>
+      </details>
+      <details class="faq-item" data-reveal>
+        <summary>Where does the data live?</summary>
+        <p>In a HydraDB graph (object-storage-backed). Query nodes are disposable caches, so a restart does not lose the graph. Reads are concurrent; writes are serialized per process.</p>
+      </details>
+      <details class="faq-item" data-reveal>
+        <summary>How do I secure the API (auth)?</summary>
+        <p>Two options. Set <span class="mono-sm">CONTEXTSMESH_API_KEY</span> on the service to require <span class="mono-sm">X-API-Key</span> or <span class="mono-sm">Authorization: Bearer</span> on <span class="mono-sm">/v1/*</span> (off by default). Or terminate auth at your API gateway or reverse proxy, where you can add TLS and network controls. The OpenAPI spec at <a class="inline-link" href="/openapi.json" target="_blank" rel="noopener"><span class="mono-sm">/openapi.json</span></a> and docs at <a class="inline-link" href="/docs" target="_blank" rel="noopener"><span class="mono-sm">/docs</span></a> describe the surface to protect.</p>
+      </details>
+      <details class="faq-item" data-reveal>
+        <summary>Can I self-host it?</summary>
+        <p>Yes. One Docker image for the HydraDB node and one Python service for the API. Both run on a laptop in this repo; for production, deploy it behind your gateway with auth and TLS.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- close -->
+  <section class="closing">
+    <div class="wrap closing-inner" data-reveal>
+      <h2>Give every agent the right context. One call at a time.</h2>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#api">Read the API</a>
+        <a class="btn btn-ghost" href="#demo">Try it live</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="#top" aria-label="ContextMesh API home">
+        <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="15" fill="#0d1420"/>
+          <g stroke="#3a4f6b" stroke-width="2.4">
+            <line x1="12" y1="15" x2="32" y2="36"/><line x1="52" y1="13" x2="32" y2="36"/>
+            <line x1="32" y1="9" x2="32" y2="36"/><line x1="10" y1="49" x2="32" y2="36"/>
+            <line x1="54" y1="47" x2="32" y2="36"/>
+          </g>
+          <g fill="#5aa2ff">
+            <circle cx="12" cy="15" r="4.6"/><circle cx="52" cy="13" r="4.6"/>
+            <circle cx="10" cy="49" r="4.6"/><circle cx="54" cy="47" r="4.6"/>
+          </g>
+          <circle cx="32" cy="36" r="7.4" fill="#37d2aa"/>
+        </svg>
+        <span class="wordmark">Context<span>Mesh</span></span>
+      </a>
+      <p class="footer-tag">Context API for agent fleets.<br>Built on HydraDB.</p>
+    </div>
+
+    <nav class="footer-col" aria-label="Product">
+      <h4>Product</h4>
+      <a href="#api">API reference</a>
+      <a href="#demo">Try the API</a>
+      <a href="#proof">Proof</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+
+    <nav class="footer-col" aria-label="API">
+      <h4>API</h4>
+      <a href="#api">POST /v1/plan</a>
+      <a href="/docs" target="_blank" rel="noopener">Swagger docs</a>
+      <a href="/openapi.json" target="_blank" rel="noopener">OpenAPI schema</a>
+      <button class="link-button js-pilot" type="button">Request a pilot</button>
+    </nav>
+
+    <div class="footer-col">
+      <h4>Built for</h4>
+      <p class="footer-small">Self-hosted web API: HydraDB graph node + FastAPI service. The HydraDB hackathon, Track 2.</p>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>© 2026 ContextMesh</span>
+    <span class="mono-sm">POST /v1/plan · POST /v1/session</span>
+  </div>
+</footer>
+
+<dialog class="pilot-dialog" id="pilotDialog" aria-labelledby="pilotTitle">
+  <form class="pilot-form" id="pilotForm">
+    <button class="dialog-close" id="pilotClose" type="button" aria-label="Close">×</button>
+    <p class="eyebrow">Pilot</p>
+    <h2 id="pilotTitle">Start a pilot</h2>
+    <p class="pilot-sub">Tell us what you’re building. We’ll reply with access and help seed a context graph for your domain.</p>
+
+    <div class="field">
+      <label for="pName">Name</label>
+      <input id="pName" name="name" type="text" autocomplete="name" required maxlength="120">
+    </div>
+    <div class="field">
+      <label for="pEmail">Work email</label>
+      <input id="pEmail" name="email" type="email" autocomplete="email" required maxlength="254">
+    </div>
+    <div class="field">
+      <label for="pCompany">Company</label>
+      <input id="pCompany" name="company" type="text" autocomplete="organization" maxlength="160">
+    </div>
+    <div class="field">
+      <label for="pNote">What are you building?</label>
+      <textarea id="pNote" name="note" rows="3" maxlength="2000" placeholder="Agent framework, number of agents, tasks per day…"></textarea>
+    </div>
+
+    <div class="pilot-actions">
+      <button class="btn btn-primary" id="pilotSubmit" type="submit">Request pilot</button>
+      <button class="btn btn-ghost" id="pilotCancel" type="button">Cancel</button>
+    </div>
+    <p class="pilot-status" id="pilotStatus" role="status" aria-live="polite"></p>
+  </form>
+</dialog>
+
+<script src="fixtures.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

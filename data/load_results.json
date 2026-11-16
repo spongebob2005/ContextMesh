@@ -1,0 +1,13 @@
+{
+  "workers": 16,
+  "sessions": 128,
+  "errors": 0,
+  "wall_seconds": 7.12,
+  "throughput_sessions_per_sec": 17.97,
+  "plan_p50_ms": 7.8,
+  "plan_p95_ms": 23.5,
+  "plan_max_ms": 25.8,
+  "record_p50_ms": 878.3,
+  "record_p95_ms": 882.6,
+  "total_graph_queries": 256
+}

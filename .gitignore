@@ -1,0 +1,50 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+.envrc
+.runtime/
+.secrets/
+secrets/
+credentials/
+*credentials*.json
+service-account*.json
+auth-token*
+*.token
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.tfstate
+*.tfstate.*
+
+# Local data stores and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# JavaScript tooling
+node_modules/
+npm-debug.log*
+
+# Build and editor output
+build/
+dist/
+demo_video.html
+.DS_Store

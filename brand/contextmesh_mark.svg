@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256">
+  <!-- ContextMesh mark: a mesh of mentions resolving into the one node you need -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#37d2aa" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#37d2aa" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#0b0f14"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="14.5" fill="none" stroke="#223042"/>
+
+  <!-- mesh edges between outer nodes -->
+  <g stroke="#223042" stroke-width="1.6" opacity="0.9">
+    <line x1="12" y1="15" x2="32" y2="9"/>
+    <line x1="52" y1="13" x2="32" y2="9"/>
+    <line x1="10" y1="49" x2="54" y2="47"/>
+  </g>
+
+  <!-- edges converging into the resolved node -->
+  <g stroke="#3a4f6b" stroke-width="1.8">
+    <line x1="12" y1="15" x2="32" y2="36"/>
+    <line x1="52" y1="13" x2="32" y2="36"/>
+    <line x1="32" y1="9"  x2="32" y2="36"/>
+    <line x1="10" y1="49" x2="32" y2="36"/>
+    <line x1="54" y1="47" x2="32" y2="36"/>
+  </g>
+
+  <!-- outer nodes (mentions) -->
+  <g fill="#5aa2ff">
+    <circle cx="12" cy="15" r="4.2"/>
+    <circle cx="52" cy="13" r="4.2"/>
+    <circle cx="10" cy="49" r="4.2"/>
+    <circle cx="54" cy="47" r="4.2"/>
+  </g>
+  <circle cx="32" cy="9" r="4.2" fill="#223042"/>
+
+  <!-- resolved node -->
+  <circle cx="32" cy="36" r="17" fill="url(#glow)"/>
+  <circle cx="32" cy="36" r="7" fill="#37d2aa"/>
+</svg>
