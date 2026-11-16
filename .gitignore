@@ -46,5 +46,7 @@ npm-debug.log*
 # Build and editor output
 build/
 dist/
+.vercel/
+web/
 demo_video.html
 .DS_Store
