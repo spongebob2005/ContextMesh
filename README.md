@@ -97,6 +97,30 @@ For a different HydraDB instance or to configure the API, copy
 HydraDB script is for a local demo; use persistent object storage and
 appropriate network controls for a deployment.
 
+## Deploy the website to Vercel
+
+The website is a static HTML/CSS/JavaScript app in `site/`. From the repository
+root, install and run the Vercel CLI:
+
+```bash
+npm install --global vercel
+vercel login
+cd site
+
+# Create/link the Vercel project and deploy a preview
+vercel
+
+# Deploy to production after reviewing the preview
+vercel --prod
+```
+
+The static site and recorded demo fallback will load on Vercel. The live demo,
+API docs, health checks, and pilot form also call the FastAPI service at
+same-origin paths (`/v1/*`, `/docs`, `/health`, and `/openapi.json`). To make
+those features work on Vercel, deploy the API separately and configure Vercel
+rewrites for those paths, or configure the client to call the API host directly
+and allow the Vercel origin in `CONTEXTSMESH_CORS_ORIGINS`.
+
 ## HTTP API
 
 The service's self-hosted default base URL is `http://localhost:8000`. Replace
