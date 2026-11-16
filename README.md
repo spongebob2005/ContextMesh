@@ -2,182 +2,229 @@
   <img src="brand/contextmesh_lockup.svg" alt="ContextMesh — agent memory, as a graph" width="420">
 </p>
 
-# HydraContext / ContextMesh — agent context layer on HydraDB
+<h1 align="center">ContextMesh</h1>
 
-**Hackathon build, Track 2.** Two layers, one graph DB:
+<p align="center">
+  A self-hosted context API that gives agents the skills, tools, and entities
+  their task needs — backed by a HydraDB graph.
+</p>
 
-- **HydraContext** — the agent context layer: an agent that starts with **zero
-  tools loaded**, traverses [HydraDB](https://github.com/hydra-db/hydradb) to
-  pull exactly the skills, tool schemas, MCP server definitions, and
-  already-resolved entities a task needs.
-- **ContextMesh** — the same layer packaged as a product endpoint
-  (`hydracontext/service.py` + `site/index.html`) with a go-to-market story in
-  [PITCH.md](PITCH.md).
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f.svg" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB.svg" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/API-FastAPI-009688.svg" alt="FastAPI">
+  <img src="https://img.shields.io/badge/graph-HydraDB-6f42c1.svg" alt="HydraDB">
+  <img src="https://img.shields.io/badge/status-hackathon%20demo-orange.svg" alt="Hackathon demo">
+</p>
 
-HydraDB is the graph DB for everything: skills, tools, MCP servers, entities,
-alias edges, sessions, and usage counters all live in SlateDB-backed object
-storage, queried over its HTTP API with OpenCypher.
+ContextMesh plans a compact context pack before an agent calls its model:
+matched skills, only the required tool schemas, their MCP servers, and
+canonical entities resolved from the task. After the agent runs, it can record
+tool usage and newly learned aliases back to the graph.
 
-## The idea in one picture
+The project has two entry points:
 
+- **HTTP API:** `POST /v1/plan` → bind the returned tools → run the agent →
+  `POST /v1/session`.
+- **Python store:** use `HydraContextStore` directly for in-process planning
+  and write-back.
+
+This repository is a hackathon/demo build, not a hosted service or production
+SLA.
+
+## Contents
+
+- [How it works](#how-it-works)
+- [Quickstart](#quickstart)
+- [HTTP API](#http-api)
+- [Configuration and security](#configuration-and-security)
+- [Evaluation and load evidence](#evaluation-and-load-evidence)
+- [Repository map](#repository-map)
+- [License](#license)
+
+## How it works
+
+```text
+Task
+  └─ plan ─► HydraDB graph
+               ├─ keywords → Skill → NEEDS → Tool → SERVED_BY → MCPServer
+               └─ mentions → Alias → RESOLVES_TO → Entity
+                    ↓
+              task-specific context pack
+                    ↓
+              agent binds tools and runs
+                    ↓
+              session write-back updates usage and aliases
 ```
-User task
-   │
-   ▼
-LangGraph agent
-   │ ① store.plan(task)  ──► HydraDB graph (HTTP)
-   │      keyword-match → Skill → NEEDS → Tool → SERVED_BY → MCPServer
-   │      mentions → Alias → RESOLVES_TO → Entity   (batched OR-chain lookup)
-   │ ② bind_tools(only the returned schemas)
-   │ ③ entity mentions hit Entity nodes → no resolver round-trips at all
-   │ ④ store.record_session(...)  ──► usage counters + new alias edges
-   ▼
-answer; the graph now knows more than it did before the task
-```
 
-Baseline agent (for comparison): every tool bound in the window, entity
-resolution through a per-mention `lookup_entity` tool — the fan-out the
-context layer eliminates.
-
-## Repo layout
-
-```
-hydracontext/
-  config.py       env-driven connection settings (HTTP API)
-  store.py        HydraContextStore: schema-aware reads/writes + plan()
-  seed_data.py    5 MCP servers, 15 tools, 6 skills, 9 entities, 10 aliases
-  seed.py         bootstrap + seed CLI (--reset wipes known ids)
-  demo.py         dry-run context pack demo (no LLM needed)
-  service.py      ContextMesh FastAPI product API + website
-  tools_sim.py    deterministic simulated MCP tool implementations
-  agent/agent.py  LangGraph agents: mode="hydra" vs mode="baseline"
-  eval/harness.py task suite + metrics + correctness scoring
-bench/load.py    concurrent load harness (reads scale, writes serialized)
-web/index.html   legacy demo UI (fallback if site/ is missing)
-brand/           logo (SVG + PNG for X) + walkthrough video (narrated & silent)
-scripts/render_brand_assets.py  X-ready logo renders: python -m scripts.render_brand_assets
-scripts/render_video.py  regenerates the walkthrough: python -m scripts.render_video
-scripts/add_audio.py     narration (edge-tts voice) + synthesized music bed -> muxed MP4
-scripts/run_node.sh   docker run of ghcr.io/hydra-db/hydradb:latest
-site/           product website (API reference + live demo), served by the API
-PITCH.md         go-to-market: ICP, wedge, pricing, proof points
-demo_video.html  animated walkthrough of the idea (open in a browser)
-```
+The graph stores skills, tools, MCP servers, entities, aliases, sessions, and
+usage counters. [HydraDB](https://github.com/hydra-db/hydradb) persists graph
+data in object storage; this demo talks to its HTTP/OpenCypher API. Planning
+uses two graph round-trips on the seeded graph. Reads can run concurrently;
+writes are serialized per service process to respect HydraDB's
+single-writer-per-cell model.
 
 ## Quickstart
 
+Prerequisites: Python 3.10+, Docker, and a running HydraDB node. The included
+script starts a local demo node using local filesystem storage.
+
 ```bash
-# 1. start a local graph-node (docker; bolt :7687 http :8443 admin :9090)
+# Start HydraDB (HTTP :8443, Bolt :7687, admin :9090)
 scripts/run_node.sh
 
-# 2. install deps and seed the context graph
+# Install dependencies and seed the example context graph
 pip install -r requirements.txt
-python -m hydracontext.seed            # add --reset to wipe and reseed
+python -m hydracontext.seed
 
-# 3. see the context pack for a task (no LLM needed)
+# Inspect a context pack without an LLM
 python -m hydracontext.demo "why is checkout failing in prod"
 
-# 4. full baseline-vs-hydra eval (needs an LLM; see below)
+# Start the API and product site
+uvicorn hydracontext.service:app --host 127.0.0.1 --port 8000
+```
+
+The node script recreates the local `hydradb-node` container and keeps its
+demo data under the ignored `.runtime/` directory.
+
+Open [http://localhost:8000/](http://localhost:8000/) for the site and live
+demo, [http://localhost:8000/docs](http://localhost:8000/docs) for Swagger UI,
+or [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+for the OpenAPI schema.
+
+For a different HydraDB instance or to configure the API, copy
+`.env.example` to `.env` and set the values for your environment. The included
+HydraDB script is for a local demo; use persistent object storage and
+appropriate network controls for a deployment.
+
+## HTTP API
+
+The service's self-hosted default base URL is `http://localhost:8000`. Replace
+it with the URL of your deployment when calling the API remotely.
+
+```bash
+curl -sS http://localhost:8000/v1/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"task":"why is checkout failing in prod","top_k":3}'
+```
+
+`POST /v1/plan` returns `skills`, task-relevant `tools` (including
+`schema_json`), their `mcp_servers`, `resolved_entities`, and timing fields.
+Use those tools in your agent, then write back the result:
+
+```bash
+curl -sS http://localhost:8000/v1/session \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "task": "why is checkout failing in prod",
+    "used_tools": ["get_pod_status", "get_events"],
+    "resolutions": {"checkout": "checkout-api", "prod": "prod-us"}
+  }'
+```
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/plan` | Plan a task-specific context pack. `top_k` defaults to 3 and is capped at 10. |
+| `POST` | `/v1/session` | Record used tools and entity resolutions. |
+| `GET` | `/v1/stats` | Return graph counts by label. |
+| `GET` | `/health` | Liveness and graph reachability. |
+| `GET` | `/ready` | Readiness check; returns 503 when HydraDB is unreachable. |
+| `POST` | `/v1/pilot` | Save a website pilot request to `.runtime/pilots.jsonl`. |
+
+The website's API section has copy-ready JavaScript `fetch` and Python
+`requests` examples for the full plan/use/record loop.
+
+### Errors and request IDs
+
+Every response carries an `X-Request-ID` header. API errors use a consistent
+shape:
+
+```json
+{
+  "error": {
+    "code": "graph_unavailable",
+    "message": "Graph backend unavailable.",
+    "request_id": "9f2c1a7b4e01"
+  }
+}
+```
+
+Invalid input returns `422 invalid_request`; unavailable graph operations
+return `503 graph_unavailable`; unexpected failures return
+`500 internal_error`. `/ready` uses its health response body to report
+readiness.
+
+## Configuration and security
+
+- **Authentication is optional and disabled by default.** Set
+  `CONTEXTSMESH_API_KEY` to require `X-API-Key` or `Authorization: Bearer` on
+  `/v1/plan`, `/v1/session`, and `/v1/stats`.
+- **CORS** defaults to `*` for the local demo. Set
+  `CONTEXTSMESH_CORS_ORIGINS` to a comma-separated list of allowed origins for
+  a deployed browser client.
+- `/health`, `/ready`, and `/v1/pilot` are public. The pilot endpoint appends
+  requests to a local JSONL file; it does not send email or notify an operator.
+- The token in the local node script is a demo credential. Do not expose the
+  demo configuration publicly; use a gateway with TLS and authentication for
+  deployments.
+
+## Evaluation and load evidence
+
+These are observed demo results, not performance or quality guarantees.
+
+| Measurement | Hydra context | Baseline |
+|---|---:|---:|
+| Prompt tokens across five ops tasks | 8,195 | 15,276 |
+| Correct tasks in the recorded run | 4/5 | 0/5 |
+
+The recorded run used `qwen2.5:1.5b` on CPU. Run the evaluation yourself with
+an LLM configured in `.env`:
+
+```bash
 python -m hydracontext.eval.harness
 ```
 
-LLM config (`.env`, copy from `.env.example`): any provider
-`langchain.init_chat_model` supports, e.g.
-
-```
-LLM_PROVIDER=ollama
-LLM_MODEL=qwen2.5:1.5b
-```
-
-## Run it as a product endpoint
+The load harness exercises concurrent reads and serialized session writes
+against a running node:
 
 ```bash
-uvicorn hydracontext.service:app --port 8000    # service needs the node running
-# open http://localhost:8000/       — product site + live API demo
-# open http://localhost:8000/docs   — Swagger UI (OpenAPI at /openapi.json)
-curl -s localhost:8000/v1/plan -H 'Content-Type: application/json' \
-     -d '{"task":"why is checkout failing in prod"}'
+python -m bench.load --workers 16 --tasks-per-worker 8
 ```
 
-Endpoints:
+The recorded 16-worker run handled 128 sessions with no errors; plan p50/p95
+were 7.8/23.5 ms. Write latency rises with queue depth because writes are
+serialized per process.
 
-| method | path          | purpose |
-|--------|---------------|---------|
-| POST   | `/v1/plan`    | plan a context pack for a task |
-| POST   | `/v1/session` | record used tools + resolutions (write-back) |
-| GET    | `/v1/stats`   | graph counts by label |
-| GET    | `/health`     | liveness + graph reachability |
-| GET    | `/ready`      | readiness; 503 when the graph is unreachable |
-| POST   | `/v1/pilot`   | store a pilot request from the website |
+## HydraDB implementation notes
 
-Reads (`/v1/plan`) are fully concurrent; writes (`/v1/session`) are serialized
-per process, matching HydraDB's single-writer-per-cell model. Errors are
-structured as `{"error": {"code", "message", "request_id", "details?"}}` and
-every response carries `X-Request-ID`. Invalid requests return 422 with
-`invalid_request`; unavailable graph operations return 503 with
-`graph_unavailable`; unexpected failures return 500 with `internal_error`.
+These are constraints verified by the store implementation and useful when
+changing graph queries:
 
-Browser clients are allowed by CORS (`CONTEXTSMESH_CORS_ORIGINS`, default `*`;
-set a comma-separated origin list for deployments).
-Auth is optional: set `CONTEXTSMESH_API_KEY` to require `X-API-Key` or
-`Authorization: Bearer` on `/v1/plan`, `/v1/session`, and `/v1/stats`, or
-terminate auth at your gateway. It is off for the local demo; `/health`,
-`/ready`, and the public `/v1/pilot` form stay open.
+- Vertex `id` values must be non-negative integers; named seed objects use
+  deterministic integer ID blocks.
+- The store uses HydraDB's HTTP API because Bolt does not accept composite
+  list/map parameters. HTTP result values arrive in typed wrappers.
+- Query parameters cannot contain `null`; optional properties are omitted or
+  represented as empty strings.
+- Batched writes are chunked to 512 rows (below the 1,024-item API limit).
+  Node upserts use `UNWIND`/`MERGE`; edge writes use `UNWIND`/`CREATE`.
+- `WHERE IN` is not relied on; membership checks use generated equality
+  predicates.
 
-## Load (engineering evidence)
+## Repository map
 
-`python -m bench.load --workers 16 --tasks-per-worker 8` — concurrent plan()
-reads + serialized session write-backs, against the live node:
+| Path | Contents |
+|---|---|
+| `hydracontext/store.py` | HydraDB-backed `HydraContextStore`, planning, and session write-back |
+| `hydracontext/seed_data.py` | Example skills, tools, MCP servers, entities, and aliases |
+| `hydracontext/service.py` | FastAPI service, OpenAPI, and website hosting |
+| `hydracontext/agent/` | LangGraph demo agents: Hydra and baseline modes |
+| `hydracontext/eval/` | Evaluation tasks and scoring |
+| `bench/load.py` | Concurrent planning and session-write load harness |
+| `site/` | Product website, API reference, and live demo |
+| `brand/` | ContextMesh brand assets |
+| `PITCH.md` | Product positioning and proposed pricing |
 
-| workers | sessions | errors | throughput | plan p50 | plan p95 | record p50 |
-|---------|----------|--------|------------|----------|----------|------------|
-| 8       | 32       | 0      | 18.0/s     | 6.2 ms   | 13.2 ms  | 437 ms     |
-| 16      | 128      | 0      | 18.0/s     | 7.8 ms   | 23.5 ms  | 878 ms     |
+## License
 
-Throughput is flat across 8→16 workers because session write-back funnels
-through one writer (by design — HydraDB admits at most one writer per cell);
-plan reads scale and stay low-latency. Record latency grows with queue depth,
-not per-op cost — p50 ≈ p95 at both sizes.
-
-## HydraDB dialect notes (learned the hard way, all verified)
-
-- The `id` property **is the vertex identity** and must be a non-negative
-  integer. Named objects get deterministic integer id blocks (see
-  `store.py`); lookups use `name` / `text` property predicates.
-- **Bolt rejects composite parameters** (lists/maps) — only scalars. The
-  documented batch shapes work over the **HTTP API**, so the store speaks
-  HTTP exclusively.
-- Parameters may not contain `null`; absent optional props are empty strings.
-- Node upsert = `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:Label, n.p = row.p`
-  (label first). Edge batch = `UNWIND $rows AS row CREATE (a {id: row.src})-[:T]->(b {id: row.dst})`
-  (idempotent per src/dst/type). Batch cap 1024; we chunk to 512.
-- `WHERE IN` is unverified; membership tests are client-built OR chains.
-- HTTP rows wrap values: `{"type":"integer","value":6}` or `{"type":"null"}`.
-
-## Eval
-
-`python -m hydracontext.eval.harness` runs five ops tasks through both agents
-and prints a comparison table (round-trips, tool calls, prompt tokens, wall
-time, correctness). Raw rows land in `data/eval_results.json`.
-
-First run, `qwen2.5:1.5b` on CPU (5 tasks each):
-
-| mode    | correct | graph round-trips | tool calls | prompt tokens | wall s |
-|---------|---------|-------------------|------------|---------------|--------|
-| hydra   | 4/5     | 2 per task        | 9          | 8,195         | 155    |
-| baseline| 0/5     | 1 per mention     | 8          | 15,276        | 117    |
-
-- Prompt tokens (context-window pressure) cut roughly in half: the hydra
-  agent binds 2–9 task-relevant tools instead of all 16 every step.
-- Entity resolution is a *guarantee* in hydra mode — mentions like
-  "checkout"/"prod"/"payments" resolve to canonical ids before the first LLM
-  call, zero extra round-trips. The baseline had no reliable path to
-  canonical ids (its `lookup_entity` calls are optional from the model's
-  point of view), which is exactly the fan-out fragility the layer removes.
-- Wall time is higher on hydra only because CPU inference dominates and the
-  baseline skipped work (entity resolution) it should have done.
-
-The hydra agent's session write-back (`record_session`) persists usage
-counters and any *newly learned* mention→entity aliases, so the next task can
-resolve more from the graph and less from the LLM — the substrate for the
-graph getting sharper the more it is used.
+This project is licensed under the [MIT License](./LICENSE).
