@@ -10,41 +10,254 @@
   <style>
     :root {
       color-scheme: dark;
-      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       background: #0b0f14;
       color: #dbe7f4;
+      --docs-bg: #0b0f14;
+      --docs-panel: #0f1620;
+      --docs-raised: #111a25;
+      --docs-line: #263547;
+      --docs-ink: #dbe7f4;
+      --docs-muted: #a7b8ca;
+      --docs-teal: #37d2aa;
+      --docs-blue: #5aa2ff;
     }
-    body { margin: 0; }
-    .docs-header {
-      padding: 20px max(24px, calc((100vw - 1200px) / 2));
-      border-bottom: 1px solid #1e2a39;
-      background: #0b0f14;
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--docs-bg); color: var(--docs-ink); }
+    a { color: var(--docs-teal); }
+    .docs-header { border-bottom: 1px solid #1e2a39; background: #0c1118; }
+    .docs-topbar {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px 28px;
     }
-    .docs-header a { color: #37d2aa; text-decoration: none; }
-    .docs-header p { margin: 8px 0 0; color: #9aacc0; }
-    .swagger-ui { max-width: 1240px; margin: 0 auto; padding: 0 20px 48px; }
+    .docs-brand, .docs-actions, .docs-action {
+      display: inline-flex;
+      align-items: center;
+    }
+    .docs-brand { gap: 10px; color: var(--docs-ink); text-decoration: none; font-weight: 700; }
+    .docs-brand img { width: 30px; height: 30px; }
+    .docs-brand em { color: var(--docs-teal); font-style: normal; }
+    .docs-brand small {
+      margin-left: 4px;
+      padding-left: 10px;
+      border-left: 1px solid var(--docs-line);
+      color: var(--docs-muted);
+      font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .docs-actions { gap: 10px; }
+    .docs-action {
+      min-height: 36px;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid var(--docs-line);
+      border-radius: 8px;
+      color: var(--docs-ink);
+      text-decoration: none;
+      font-size: 13px;
+      transition: border-color .16s ease, background .16s ease;
+    }
+    .docs-action:hover { border-color: var(--docs-teal); background: #101a22; }
+    .docs-action-primary { border-color: #286452; color: var(--docs-teal); }
+    .docs-intro {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 34px 28px 30px;
+    }
+    .docs-kicker {
+      margin: 0 0 9px;
+      color: var(--docs-teal);
+      font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .docs-intro h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.035em; }
+    .docs-intro-copy {
+      max-width: 700px;
+      margin: 9px 0 0;
+      color: var(--docs-muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .docs-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      max-width: 1280px;
+      margin: 0 auto 20px;
+      padding: 13px 16px;
+      border: 1px solid #29483f;
+      border-radius: 10px;
+      background: #0e1918;
+      color: var(--docs-muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .docs-notice strong { flex: 0 0 auto; color: var(--docs-teal); }
+    .swagger-ui { max-width: 1280px; margin: 0 auto; padding: 0 28px 56px; color: var(--docs-ink); }
+    .swagger-ui, .swagger-ui .wrapper { background: var(--docs-bg); }
     .swagger-ui .topbar { display: none; }
-    .swagger-ui .scheme-container { background: #101721; box-shadow: none; }
-    .swagger-ui .info .title, .swagger-ui .opblock-tag,
-    .swagger-ui .model-title, .swagger-ui label,
-    .swagger-ui .parameter__name, .swagger-ui .response-col_status {
-      color: #dbe7f4;
-    }
-    .swagger-ui .info p, .swagger-ui .renderedMarkdown p,
-    .swagger-ui .response-col_description { color: #b6c4d3; }
+    .swagger-ui .info { margin: 0 0 22px; }
+    .swagger-ui .info .title, .swagger-ui .info p,
+    .swagger-ui .opblock-tag, .swagger-ui .opblock-tag small,
     .swagger-ui .opblock .opblock-summary-description,
-    .swagger-ui .opblock .opblock-section-header h4 { color: #dbe7f4; }
-    .swagger-ui section.models { border-color: #314154; }
-    .swagger-ui .model-box { background: #101721; }
+    .swagger-ui .opblock .opblock-section-header h4,
+    .swagger-ui label, .swagger-ui .parameter__name,
+    .swagger-ui .response-col_status, .swagger-ui .response-col_description,
+    .swagger-ui .renderedMarkdown p, .swagger-ui .renderedMarkdown li,
+    .swagger-ui .model, .swagger-ui .prop-type, .swagger-ui .prop-format,
+    .swagger-ui .model-title, .swagger-ui .model-toggle:after {
+      color: var(--docs-ink);
+    }
+    .swagger-ui .info a, .swagger-ui .opblock-tag small,
+    .swagger-ui .prop-type, .swagger-ui .prop-format { color: var(--docs-blue); }
+    .swagger-ui .info .title { font-size: 25px; }
+    .swagger-ui .info .title small { background: #16222e; }
+    .swagger-ui .info .title small.version-stamp { color: var(--docs-teal); }
+    .swagger-ui .info p { color: var(--docs-muted); }
+    .swagger-ui .scheme-container {
+      margin: 0 0 18px;
+      padding: 14px 16px;
+      border: 1px solid var(--docs-line);
+      border-radius: 10px;
+      background: var(--docs-panel);
+      box-shadow: none;
+    }
+    .swagger-ui .servers-title, .swagger-ui .servers > label,
+    .swagger-ui .auth-wrapper label { color: var(--docs-muted); }
+    .swagger-ui select, .swagger-ui input, .swagger-ui textarea {
+      border: 1px solid #35485c;
+      border-radius: 6px;
+      background: #0b1118;
+      color: var(--docs-ink);
+    }
+    .swagger-ui .opblock-tag {
+      margin: 0;
+      padding: 15px 4px;
+      border-bottom: 1px solid var(--docs-line);
+      font-size: 17px;
+    }
+    .swagger-ui .opblock-tag:hover { background: #101721; }
+    .swagger-ui .opblock {
+      overflow: hidden;
+      border: 1px solid var(--docs-line);
+      border-radius: 9px;
+      background: var(--docs-panel);
+      box-shadow: none;
+    }
+    .swagger-ui .opblock .opblock-summary { border-color: var(--docs-line); }
+    .swagger-ui .opblock .opblock-summary-path,
+    .swagger-ui .opblock .opblock-summary-description { color: var(--docs-ink); }
+    .swagger-ui .opblock .opblock-summary-method { text-shadow: none; }
+    .swagger-ui .opblock .opblock-section-header {
+      background: var(--docs-raised);
+      box-shadow: none;
+    }
+    .swagger-ui .opblock .opblock-section-header h4 { color: var(--docs-ink); }
+    .swagger-ui .opblock-body, .swagger-ui .responses-wrapper,
+    .swagger-ui .parameters-container { background: var(--docs-panel); }
+    .swagger-ui .tab li button.tablinks { color: var(--docs-muted); }
+    .swagger-ui .tab li.active button.tablinks { color: var(--docs-teal); }
+    .swagger-ui table thead tr th, .swagger-ui table thead tr td,
+    .swagger-ui table tbody tr td { border-color: var(--docs-line); color: var(--docs-ink); }
+    .swagger-ui .response-control-media-type__accept-header,
+    .swagger-ui .response-control-media-type__accept-message { color: var(--docs-muted); }
+    .swagger-ui .highlight-code, .swagger-ui .microlight {
+      background: #080d12 !important;
+      color: #c9d7e5 !important;
+    }
+    .swagger-ui section.models {
+      margin-top: 20px;
+      padding: 4px 16px 14px;
+      border: 1px solid var(--docs-line);
+      border-radius: 10px;
+      background: var(--docs-panel);
+    }
+    .swagger-ui section.models h4,
+    .swagger-ui section.models .models-control,
+    .swagger-ui section.models .models-control span {
+      color: var(--docs-ink) !important;
+    }
+    .swagger-ui section.models .model-container {
+      margin: 8px 0;
+      padding: 12px 14px;
+      border: 1px solid var(--docs-line);
+      border-radius: 8px;
+      background: var(--docs-raised);
+    }
+    .swagger-ui section.models .json-schema-2020-12 {
+      color: var(--docs-ink) !important;
+      background: transparent !important;
+    }
+    .swagger-ui section.models .json-schema-2020-12-accordion {
+      color: var(--docs-ink) !important;
+      background: #172431 !important;
+      border: 1px solid #304457;
+      border-radius: 6px;
+    }
+    .swagger-ui section.models .json-schema-2020-12__title,
+    .swagger-ui section.models .json-schema-2020-12__title *,
+    .swagger-ui section.models .json-schema-2020-12__attribute {
+      color: var(--docs-ink) !important;
+    }
+    .swagger-ui section.models .json-schema-2020-12-expand-deep-button {
+      padding: 3px 8px;
+      border: 1px solid #35485c;
+      border-radius: 5px;
+      background: #101721 !important;
+      color: #b8c8d8 !important;
+    }
+    .swagger-ui section.models .json-schema-2020-12-expand-deep-button:hover {
+      border-color: var(--docs-teal);
+      color: var(--docs-teal) !important;
+    }
+    .swagger-ui section.models .json-schema-2020-12__attribute--primary,
+    .swagger-ui section.models .json-schema-2020-12__attribute--secondary {
+      color: var(--docs-blue) !important;
+    }
+    .swagger-ui section.models .json-schema-2020-12__constraint,
+    .swagger-ui section.models .json-schema-2020-12__description {
+      color: var(--docs-muted) !important;
+    }
+    @media (max-width: 640px) {
+      .docs-topbar { align-items: flex-start; padding: 14px 18px; }
+      .docs-brand small { display: none; }
+      .docs-actions { gap: 6px; }
+      .docs-action { padding: 0 9px; font-size: 12px; }
+      .docs-intro { padding: 26px 18px 22px; }
+      .docs-notice { margin: 0 18px 16px; }
+      .swagger-ui { padding: 0 14px 36px; }
+      .swagger-ui .scheme-container { align-items: flex-start; }
+    }
   </style>
 </head>
 <body>
   <header class="docs-header">
-    <a href="/">← ContextMesh home</a>
-    <p>Interactive API reference. The static website does not host the API;
-      deploy the FastAPI service separately to execute requests.</p>
-    <p><a href="/openapi.json">Download the OpenAPI specification</a></p>
+    <div class="docs-topbar">
+      <a class="docs-brand" href="/">
+        <img src="/assets/contextmesh_mark.svg" alt="">
+        <span>Context<em>Mesh</em><small>API reference</small></span>
+      </a>
+      <nav class="docs-actions" aria-label="Documentation links">
+        <a class="docs-action" href="/">Home</a>
+        <a class="docs-action docs-action-primary" href="/openapi.json">OpenAPI JSON</a>
+      </nav>
+    </div>
+    <div class="docs-intro">
+      <p class="docs-kicker">Developer documentation</p>
+      <h1>ContextMesh API</h1>
+      <p class="docs-intro-copy">Explore request and response schemas for planning agent context, recording sessions, and checking graph health.</p>
+    </div>
   </header>
+  <aside class="docs-notice">
+    <strong>Static reference</strong>
+    <span>Requests are disabled here because this site does not host the FastAPI service. Set up your own service at the documented base URL to call these endpoints.</span>
+  </aside>
   <main id="swagger-ui"></main>
   <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
@@ -54,6 +267,7 @@
       deepLinking: true,
       displayRequestDuration: true,
       filter: true,
+      docExpansion: "list",
       supportedSubmitMethods: [],
       presets: [SwaggerUIBundle.presets.apis],
       layout: "BaseLayout"
