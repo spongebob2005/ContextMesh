@@ -59,6 +59,8 @@ app = FastAPI(
         "`Authorization: Bearer` on `/v1/*`, or terminate auth at your gateway."
     ),
     servers=[{"url": "http://localhost:8000", "description": "Self-hosted service"}],
+    docs_url=None,
+    redoc_url=None,
     openapi_tags=[
         {"name": "plan", "description": "Plan the context for a task."},
         {"name": "session", "description": "Record what an agent used."},
@@ -434,6 +436,31 @@ def app_js():
 def fixtures():
     path = SITE_DIR / "fixtures.js"
     return FileResponse(path) if path.is_file() else FileResponse(WEB_DIR / "fixtures.js")
+
+
+@app.get("/docs", include_in_schema=False)
+@app.get("/docs/", include_in_schema=False)
+def docs_ui():
+    path = SITE_DIR / "docs" / "index.html"
+    if path.is_file():
+        return FileResponse(path)
+    raise HTTPException(status_code=404, detail="Docs not found.")
+
+
+@app.get("/docs/docs.css", include_in_schema=False)
+def docs_css():
+    path = SITE_DIR / "docs" / "docs.css"
+    if path.is_file():
+        return FileResponse(path, media_type="text/css")
+    raise HTTPException(status_code=404, detail="Not found.")
+
+
+@app.get("/docs/docs.js", include_in_schema=False)
+def docs_js():
+    path = SITE_DIR / "docs" / "docs.js"
+    if path.is_file():
+        return FileResponse(path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="Not found.")
 
 
 # ----------------------------------------------------------------------- ops

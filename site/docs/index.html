@@ -4,274 +4,348 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0f14">
-  <title>ContextMesh API Docs</title>
+  <meta name="description" content="ContextMesh API docs — plan task-specific context packs, record sessions, and inspect graph health.">
+  <title>ContextMesh Docs — API reference</title>
   <link rel="icon" href="/assets/contextmesh_mark.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
-  <style>
-    :root {
-      color-scheme: dark;
-      font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: #0b0f14;
-      color: #dbe7f4;
-      --docs-bg: #0b0f14;
-      --docs-panel: #0f1620;
-      --docs-raised: #111a25;
-      --docs-line: #263547;
-      --docs-ink: #dbe7f4;
-      --docs-muted: #a7b8ca;
-      --docs-teal: #37d2aa;
-      --docs-blue: #5aa2ff;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: var(--docs-bg); color: var(--docs-ink); }
-    a { color: var(--docs-teal); }
-    .docs-header { border-bottom: 1px solid #1e2a39; background: #0c1118; }
-    .docs-topbar {
-      min-height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 12px 28px;
-    }
-    .docs-brand, .docs-actions, .docs-action {
-      display: inline-flex;
-      align-items: center;
-    }
-    .docs-brand { gap: 10px; color: var(--docs-ink); text-decoration: none; font-weight: 700; }
-    .docs-brand img { width: 30px; height: 30px; }
-    .docs-brand em { color: var(--docs-teal); font-style: normal; }
-    .docs-brand small {
-      margin-left: 4px;
-      padding-left: 10px;
-      border-left: 1px solid var(--docs-line);
-      color: var(--docs-muted);
-      font: 500 12px ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
-    .docs-actions { gap: 10px; }
-    .docs-action {
-      min-height: 36px;
-      gap: 8px;
-      padding: 0 12px;
-      border: 1px solid var(--docs-line);
-      border-radius: 8px;
-      color: var(--docs-ink);
-      text-decoration: none;
-      font-size: 13px;
-      transition: border-color .16s ease, background .16s ease;
-    }
-    .docs-action:hover { border-color: var(--docs-teal); background: #101a22; }
-    .docs-action-primary { border-color: #286452; color: var(--docs-teal); }
-    .docs-intro {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 34px 28px 30px;
-    }
-    .docs-kicker {
-      margin: 0 0 9px;
-      color: var(--docs-teal);
-      font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-    }
-    .docs-intro h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.035em; }
-    .docs-intro-copy {
-      max-width: 700px;
-      margin: 9px 0 0;
-      color: var(--docs-muted);
-      font-size: 14px;
-      line-height: 1.65;
-    }
-    .docs-notice {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      max-width: 1280px;
-      margin: 0 auto 20px;
-      padding: 13px 16px;
-      border: 1px solid #29483f;
-      border-radius: 10px;
-      background: #0e1918;
-      color: var(--docs-muted);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-    .docs-notice strong { flex: 0 0 auto; color: var(--docs-teal); }
-    .swagger-ui { max-width: 1280px; margin: 0 auto; padding: 0 28px 56px; color: var(--docs-ink); }
-    .swagger-ui, .swagger-ui .wrapper { background: var(--docs-bg); }
-    .swagger-ui .topbar { display: none; }
-    .swagger-ui .info { margin: 0 0 22px; }
-    .swagger-ui .info .title, .swagger-ui .info p,
-    .swagger-ui .opblock-tag, .swagger-ui .opblock-tag small,
-    .swagger-ui .opblock .opblock-summary-description,
-    .swagger-ui .opblock .opblock-section-header h4,
-    .swagger-ui label, .swagger-ui .parameter__name,
-    .swagger-ui .response-col_status, .swagger-ui .response-col_description,
-    .swagger-ui .renderedMarkdown p, .swagger-ui .renderedMarkdown li,
-    .swagger-ui .model, .swagger-ui .prop-type, .swagger-ui .prop-format,
-    .swagger-ui .model-title, .swagger-ui .model-toggle:after {
-      color: var(--docs-ink);
-    }
-    .swagger-ui .info a, .swagger-ui .opblock-tag small,
-    .swagger-ui .prop-type, .swagger-ui .prop-format { color: var(--docs-blue); }
-    .swagger-ui .info .title { font-size: 25px; }
-    .swagger-ui .info .title small { background: #16222e; }
-    .swagger-ui .info .title small.version-stamp { color: var(--docs-teal); }
-    .swagger-ui .info p { color: var(--docs-muted); }
-    .swagger-ui .scheme-container {
-      margin: 0 0 18px;
-      padding: 14px 16px;
-      border: 1px solid var(--docs-line);
-      border-radius: 10px;
-      background: var(--docs-panel);
-      box-shadow: none;
-    }
-    .swagger-ui .servers-title, .swagger-ui .servers > label,
-    .swagger-ui .auth-wrapper label { color: var(--docs-muted); }
-    .swagger-ui select, .swagger-ui input, .swagger-ui textarea {
-      border: 1px solid #35485c;
-      border-radius: 6px;
-      background: #0b1118;
-      color: var(--docs-ink);
-    }
-    .swagger-ui .opblock-tag {
-      margin: 0;
-      padding: 15px 4px;
-      border-bottom: 1px solid var(--docs-line);
-      font-size: 17px;
-    }
-    .swagger-ui .opblock-tag:hover { background: #101721; }
-    .swagger-ui .opblock {
-      overflow: hidden;
-      border: 1px solid var(--docs-line);
-      border-radius: 9px;
-      background: var(--docs-panel);
-      box-shadow: none;
-    }
-    .swagger-ui .opblock .opblock-summary { border-color: var(--docs-line); }
-    .swagger-ui .opblock .opblock-summary-path,
-    .swagger-ui .opblock .opblock-summary-description { color: var(--docs-ink); }
-    .swagger-ui .opblock .opblock-summary-method { text-shadow: none; }
-    .swagger-ui .opblock .opblock-section-header {
-      background: var(--docs-raised);
-      box-shadow: none;
-    }
-    .swagger-ui .opblock .opblock-section-header h4 { color: var(--docs-ink); }
-    .swagger-ui .opblock-body, .swagger-ui .responses-wrapper,
-    .swagger-ui .parameters-container { background: var(--docs-panel); }
-    .swagger-ui .tab li button.tablinks { color: var(--docs-muted); }
-    .swagger-ui .tab li.active button.tablinks { color: var(--docs-teal); }
-    .swagger-ui table thead tr th, .swagger-ui table thead tr td,
-    .swagger-ui table tbody tr td { border-color: var(--docs-line); color: var(--docs-ink); }
-    .swagger-ui .response-control-media-type__accept-header,
-    .swagger-ui .response-control-media-type__accept-message { color: var(--docs-muted); }
-    .swagger-ui .highlight-code, .swagger-ui .microlight {
-      background: #080d12 !important;
-      color: #c9d7e5 !important;
-    }
-    .swagger-ui section.models {
-      margin-top: 20px;
-      padding: 4px 16px 14px;
-      border: 1px solid var(--docs-line);
-      border-radius: 10px;
-      background: var(--docs-panel);
-    }
-    .swagger-ui section.models h4,
-    .swagger-ui section.models .models-control,
-    .swagger-ui section.models .models-control span {
-      color: var(--docs-ink) !important;
-    }
-    .swagger-ui section.models .model-container {
-      margin: 8px 0;
-      padding: 12px 14px;
-      border: 1px solid var(--docs-line);
-      border-radius: 8px;
-      background: var(--docs-raised);
-    }
-    .swagger-ui section.models .json-schema-2020-12 {
-      color: var(--docs-ink) !important;
-      background: transparent !important;
-    }
-    .swagger-ui section.models .json-schema-2020-12-accordion {
-      color: var(--docs-ink) !important;
-      background: #172431 !important;
-      border: 1px solid #304457;
-      border-radius: 6px;
-    }
-    .swagger-ui section.models .json-schema-2020-12__title,
-    .swagger-ui section.models .json-schema-2020-12__title *,
-    .swagger-ui section.models .json-schema-2020-12__attribute {
-      color: var(--docs-ink) !important;
-    }
-    .swagger-ui section.models .json-schema-2020-12-expand-deep-button {
-      padding: 3px 8px;
-      border: 1px solid #35485c;
-      border-radius: 5px;
-      background: #101721 !important;
-      color: #b8c8d8 !important;
-    }
-    .swagger-ui section.models .json-schema-2020-12-expand-deep-button:hover {
-      border-color: var(--docs-teal);
-      color: var(--docs-teal) !important;
-    }
-    .swagger-ui section.models .json-schema-2020-12__attribute--primary,
-    .swagger-ui section.models .json-schema-2020-12__attribute--secondary {
-      color: var(--docs-blue) !important;
-    }
-    .swagger-ui section.models .json-schema-2020-12__constraint,
-    .swagger-ui section.models .json-schema-2020-12__description {
-      color: var(--docs-muted) !important;
-    }
-    @media (max-width: 640px) {
-      .docs-topbar { align-items: flex-start; padding: 14px 18px; }
-      .docs-brand small { display: none; }
-      .docs-actions { gap: 6px; }
-      .docs-action { padding: 0 9px; font-size: 12px; }
-      .docs-intro { padding: 26px 18px 22px; }
-      .docs-notice { margin: 0 18px 16px; }
-      .swagger-ui { padding: 0 14px 36px; }
-      .swagger-ui .scheme-container { align-items: flex-start; }
-    }
-  </style>
+  <link rel="stylesheet" href="/docs/docs.css">
 </head>
 <body>
-  <header class="docs-header">
-    <div class="docs-topbar">
-      <a class="docs-brand" href="/">
-        <img src="/assets/contextmesh_mark.svg" alt="">
-        <span>Context<em>Mesh</em><small>API reference</small></span>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="side-toggle" id="sideToggle" type="button" aria-expanded="false" aria-controls="sidebar" aria-label="Open documentation menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h10"/>
+        </svg>
+      </button>
+
+      <a class="brand" href="/">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="15" fill="#0d1420"/>
+          <g stroke="#3a4f6b" stroke-width="2.4">
+            <line x1="12" y1="15" x2="32" y2="36"/><line x1="52" y1="13" x2="32" y2="36"/>
+            <line x1="32" y1="9" x2="32" y2="36"/><line x1="10" y1="49" x2="32" y2="36"/>
+            <line x1="54" y1="47" x2="32" y2="36"/>
+          </g>
+          <g fill="#5aa2ff">
+            <circle cx="12" cy="15" r="4.6"/><circle cx="52" cy="13" r="4.6"/>
+            <circle cx="10" cy="49" r="4.6"/><circle cx="54" cy="47" r="4.6"/>
+          </g>
+          <circle cx="32" cy="36" r="7.4" fill="#37d2aa"/>
+        </svg>
+        <span>Context<em>Mesh</em></span>
+        <span class="brand-badge">Docs</span>
       </a>
-      <nav class="docs-actions" aria-label="Documentation links">
-        <a class="docs-action" href="/">Home</a>
-        <a class="docs-action docs-action-primary" href="/openapi.json">OpenAPI JSON</a>
+
+      <nav class="top-links" aria-label="Docs shortcuts">
+        <a class="top-link" href="/">Home</a>
+        <a class="top-link" href="/#demo">Try it</a>
+        <a class="top-link top-link-solid" href="/openapi.json">OpenAPI JSON</a>
       </nav>
     </div>
-    <div class="docs-intro">
-      <p class="docs-kicker">Developer documentation</p>
-      <h1>ContextMesh API</h1>
-      <p class="docs-intro-copy">Explore request and response schemas for planning agent context, recording sessions, and checking graph health.</p>
-    </div>
   </header>
-  <aside class="docs-notice">
-    <strong>Static reference</strong>
-    <span>Requests are disabled here because this site does not host the FastAPI service. Set up your own service at the documented base URL to call these endpoints.</span>
-  </aside>
-  <main id="swagger-ui"></main>
+
+  <div class="side-overlay" id="sideOverlay"></div>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Documentation">
+      <div class="side-group">
+        <p class="side-label">Guides</p>
+        <nav class="side-nav">
+          <a class="side-link is-active" href="#overview">Overview</a>
+          <a class="side-link" href="#quickstart">Quickstart</a>
+          <a class="side-link" href="#auth">Authentication</a>
+          <a class="side-link" href="#errors">Errors</a>
+        </nav>
+      </div>
+
+      <div class="side-group">
+        <p class="side-label">Endpoints</p>
+        <nav class="side-nav" aria-label="API endpoints">
+          <a class="side-link" href="#endpoints">
+            <span class="side-method post">POST</span>
+            <span class="side-path">/v1/plan</span>
+          </a>
+          <a class="side-link" href="#endpoints">
+            <span class="side-method post">POST</span>
+            <span class="side-path">/v1/session</span>
+          </a>
+          <a class="side-link" href="#endpoints">
+            <span class="side-method get">GET</span>
+            <span class="side-path">/v1/stats</span>
+          </a>
+          <a class="side-link" href="#endpoints">
+            <span class="side-method get">GET</span>
+            <span class="side-path">/health</span>
+          </a>
+          <a class="side-link" href="#reference">API reference</a>
+        </nav>
+      </div>
+
+      <div class="side-foot">
+        <p>Self-hosted demo API. Point clients at your own base URL, then explore schemas in the reference below.</p>
+      </div>
+    </aside>
+
+    <main class="content" id="main">
+      <header class="hero">
+        <p class="kicker">Developer documentation</p>
+        <h1>ContextMesh API</h1>
+        <p class="hero-lede">Plan a compact context pack for each agent task — skills, tool schemas, MCP servers, and resolved entities — then write usage back to the graph.</p>
+        <div class="hero-meta">
+          <span class="chip"><strong>v0.2.0</strong></span>
+          <span class="chip">OpenAPI 3.1</span>
+          <span class="chip">Base <strong>localhost:8000</strong></span>
+        </div>
+      </header>
+
+      <aside class="notice" role="note">
+        <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 8v5M12 16.5h.01"/>
+        </svg>
+        <div>
+          <strong>Static reference</strong>
+          <p>Try-it-out is disabled on this site because the FastAPI service is not hosted here. Run the service locally (or deploy it) and use the documented base URL to call endpoints.</p>
+        </div>
+      </aside>
+
+      <section class="doc-section" id="overview">
+        <h2>Overview</h2>
+        <div class="doc-prose">
+          <p>ContextMesh is a self-hosted web API backed by a <strong>HydraDB</strong> graph. Before your agent calls a model, <code>POST /v1/plan</code> returns only the tools and entities that task needs. After the run, <code>POST /v1/session</code> records usage and learned aliases.</p>
+          <p>Reads are concurrent. Session writes are serialized per process because HydraDB admits one writer per cell.</p>
+        </div>
+
+        <div class="flow" aria-label="Plan and session flow">
+          <pre><span class="hi">Task</span>
+  └─ plan ─► HydraDB graph
+               ├─ keywords → Skill → NEEDS → Tool → SERVED_BY → MCPServer
+               └─ mentions → Alias → RESOLVES_TO → Entity
+                    ↓
+              task-specific context pack
+                    ↓
+              agent binds tools and runs
+                    ↓
+              session write-back updates usage and aliases</pre>
+        </div>
+      </section>
+
+      <section class="doc-section" id="quickstart">
+        <h2>Quickstart</h2>
+        <div class="doc-prose">
+          <p>Prerequisites: Python 3.10+, Docker, and a running HydraDB node. From the repository root:</p>
+        </div>
+
+        <ol class="steps">
+          <li>
+            <h3>Start HydraDB</h3>
+            <p>The included script starts a local demo node with filesystem storage.</p>
+            <div class="code-block">
+              <div class="code-head">
+                <span class="code-lang">bash</span>
+                <button class="copy-btn" type="button" data-copy="code-node"><span data-copy-label>Copy</span></button>
+              </div>
+              <pre id="code-node">scripts/run_node.sh</pre>
+            </div>
+          </li>
+          <li>
+            <h3>Install and seed</h3>
+            <p>Install dependencies, then seed the example context graph.</p>
+            <div class="code-block">
+              <div class="code-head">
+                <span class="code-lang">bash</span>
+                <button class="copy-btn" type="button" data-copy="code-seed"><span data-copy-label>Copy</span></button>
+              </div>
+              <pre id="code-seed">pip install -r requirements.txt
+python -m hydracontext.seed</pre>
+            </div>
+          </li>
+          <li>
+            <h3>Run the API</h3>
+            <p>Serve the API and product site together.</p>
+            <div class="code-block">
+              <div class="code-head">
+                <span class="code-lang">bash</span>
+                <button class="copy-btn" type="button" data-copy="code-serve"><span data-copy-label>Copy</span></button>
+              </div>
+              <pre id="code-serve">uvicorn hydracontext.service:app --host 127.0.0.1 --port 8000</pre>
+            </div>
+          </li>
+          <li>
+            <h3>Plan a context pack</h3>
+            <p>Send a task and inspect the returned skills, tools, and entities.</p>
+            <div class="code-block">
+              <div class="code-head">
+                <span class="code-lang">bash</span>
+                <button class="copy-btn" type="button" data-copy="code-plan"><span data-copy-label>Copy</span></button>
+              </div>
+              <pre id="code-plan">curl -sS http://localhost:8000/v1/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"task":"why is checkout failing in prod","top_k":3}'</pre>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="doc-section" id="auth">
+        <h2>Authentication</h2>
+        <div class="doc-prose">
+          <p>Authentication is <strong>optional and disabled by default</strong>. Set <code>CONTEXTSMESH_API_KEY</code> to require <code>X-API-Key</code> or <code>Authorization: Bearer</code> on <code>/v1/plan</code>, <code>/v1/session</code>, and <code>/v1/stats</code>.</p>
+          <p><code>/health</code>, <code>/ready</code>, and <code>/v1/pilot</code> stay public. CORS defaults to <code>*</code> for the local demo; set <code>CONTEXTSMESH_CORS_ORIGINS</code> for a deployed browser client.</p>
+        </div>
+
+        <div class="code-block">
+          <div class="code-head">
+            <span class="code-lang">http</span>
+            <button class="copy-btn" type="button" data-copy="code-auth"><span data-copy-label>Copy</span></button>
+          </div>
+          <pre id="code-auth"><span class="tok-cmt"># Either header works when CONTEXTSMESH_API_KEY is set</span>
+X-API-Key: your-key
+Authorization: Bearer your-key</pre>
+        </div>
+      </section>
+
+      <section class="doc-section" id="errors">
+        <h2>Errors</h2>
+        <div class="doc-prose">
+          <p>Every response includes an <code>X-Request-ID</code> header. API errors use a consistent envelope:</p>
+        </div>
+
+        <div class="code-block">
+          <div class="code-head">
+            <span class="code-lang">json</span>
+            <button class="copy-btn" type="button" data-copy="code-error"><span data-copy-label>Copy</span></button>
+          </div>
+          <pre id="code-error">{
+  <span class="tok-key">"error"</span>: {
+    <span class="tok-key">"code"</span>: <span class="tok-str">"graph_unavailable"</span>,
+    <span class="tok-key">"message"</span>: <span class="tok-str">"Graph backend unavailable."</span>,
+    <span class="tok-key">"request_id"</span>: <span class="tok-str">"9f2c1a7b4e01"</span>
+  }
+}</pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Code</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="status s4">422</span></td>
+                <td><code>invalid_request</code></td>
+                <td>Request body or query failed validation</td>
+              </tr>
+              <tr>
+                <td><span class="status s4">401</span></td>
+                <td><code>unauthorized</code></td>
+                <td>Missing or invalid API key (when auth is enabled)</td>
+              </tr>
+              <tr>
+                <td><span class="status s5">503</span></td>
+                <td><code>graph_unavailable</code></td>
+                <td>HydraDB unreachable for a graph operation</td>
+              </tr>
+              <tr>
+                <td><span class="status s5">500</span></td>
+                <td><code>internal_error</code></td>
+                <td>Unexpected server failure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="endpoints">
+        <h2>Endpoints</h2>
+        <div class="doc-prose">
+          <p>Replace <code>http://localhost:8000</code> with your deployment URL when calling remotely.</p>
+        </div>
+
+        <div class="endpoint-grid">
+          <a class="endpoint" href="#reference">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/v1/plan</span>
+            <span class="endpoint-jump">Open reference →</span>
+            <span class="endpoint-desc">Plan a task-specific context pack. <code>top_k</code> defaults to 3, capped at 10.</span>
+          </a>
+          <a class="endpoint" href="#reference">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/v1/session</span>
+            <span class="endpoint-jump">Open reference →</span>
+            <span class="endpoint-desc">Record used tools and entity resolutions back to the graph.</span>
+          </a>
+          <a class="endpoint" href="#reference">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/stats</span>
+            <span class="endpoint-jump">Open reference →</span>
+            <span class="endpoint-desc">Return graph counts by label.</span>
+          </a>
+          <a class="endpoint" href="#reference">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/health</span>
+            <span class="endpoint-jump">Open reference →</span>
+            <span class="endpoint-desc">Liveness and graph reachability.</span>
+          </a>
+          <a class="endpoint" href="#reference">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/ready</span>
+            <span class="endpoint-jump">Open reference →</span>
+            <span class="endpoint-desc">Readiness check; returns 503 when HydraDB is unreachable.</span>
+          </a>
+          <a class="endpoint" href="#reference">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/v1/pilot</span>
+            <span class="endpoint-jump">Open reference →</span>
+            <span class="endpoint-desc">Save a website pilot request to local JSONL storage.</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="doc-section is-wide" id="reference">
+        <div class="ref-head">
+          <div>
+            <h2>API reference</h2>
+            <p>Interactive OpenAPI explorer. Schemas and examples load from <code>/openapi.json</code>.</p>
+          </div>
+          <div class="ref-actions">
+            <a class="ref-btn" href="/openapi.json">Download OpenAPI</a>
+            <a class="ref-btn ref-btn-accent" href="/#api">Site examples</a>
+          </div>
+        </div>
+
+        <div class="swagger-frame">
+          <div class="swagger-frame-bar">
+            <span>OpenAPI</span>
+            <span class="swagger-host" id="swaggerHost">http://localhost:8000</span>
+          </div>
+          <div id="swagger-ui"></div>
+        </div>
+      </section>
+
+      <footer class="docs-footer">
+        <span>ContextMesh · MIT · built on HydraDB</span>
+        <span>
+          <a href="/">Product site</a>
+          ·
+          <a href="https://github.com/hydra-db/hydradb" rel="noopener noreferrer" target="_blank">HydraDB</a>
+        </span>
+      </footer>
+    </main>
+  </div>
+
   <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-  <script>
-    window.ui = SwaggerUIBundle({
-      url: "/openapi.json",
-      dom_id: "#swagger-ui",
-      deepLinking: true,
-      displayRequestDuration: true,
-      filter: true,
-      docExpansion: "list",
-      supportedSubmitMethods: [],
-      presets: [SwaggerUIBundle.presets.apis],
-      layout: "BaseLayout"
-    });
-  </script>
+  <script src="/docs/docs.js"></script>
 </body>
 </html>
